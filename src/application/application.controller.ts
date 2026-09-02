@@ -1,6 +1,15 @@
-import { Controller, Get, Post, Body, Request, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Request,
+  Param,
+  Patch,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApplicationService } from './application.service';
-import { ApplicationDto } from './dto/application.dto';
+import { ApplicationDto, UpdateApplicationDto } from './dto/application.dto';
 import { Request as ExpressRequest } from 'express';
 
 interface RequestWithUser extends ExpressRequest {
@@ -35,5 +44,15 @@ export class ApplicationController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.applicationService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(
+    @Request() req: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: UpdateApplicationDto,
+  ) {
+    const userId = req.user.sub;
+    return this.applicationService.update(userId, id, updateData);
   }
 }
