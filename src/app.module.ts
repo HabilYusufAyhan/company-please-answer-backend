@@ -8,10 +8,22 @@ import { AuthGuard } from './auth/auth.guard';
 import { CompanyModule } from './company/company.module';
 import { ApplicationModule } from './application/application.module';
 import { AiModule } from './ai/ai.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CompanyModule, ApplicationModule, AiModule],
+  imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+    PrismaModule,
+    AuthModule,
+    CompanyModule,
+    ApplicationModule,
+    AiModule,
+  ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

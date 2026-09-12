@@ -11,6 +11,7 @@ import {
 import { ApplicationService } from './application.service';
 import { ApplicationDto, UpdateApplicationDto } from './dto/application.dto';
 import { Request as ExpressRequest } from 'express';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 interface RequestWithUser extends ExpressRequest {
   user: {
@@ -20,6 +21,8 @@ interface RequestWithUser extends ExpressRequest {
   };
 }
 
+@ApiTags('application')
+@ApiBearerAuth()
 @Controller('application')
 export class ApplicationController {
   constructor(private readonly applicationService: ApplicationService) {}

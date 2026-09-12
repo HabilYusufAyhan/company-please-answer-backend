@@ -44,7 +44,6 @@ export class AiService {
     try {
       const model = this.AI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
-      // Değerlendirmeleri okunabilir formata dönüştür
       const evaluationText = evaluations
         .map(
           (e, i) =>
@@ -82,4 +81,3 @@ export class AiService {
     }
   }
 }
-
