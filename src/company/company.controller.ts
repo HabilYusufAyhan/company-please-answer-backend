@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CompanyDto } from './dto/company.dto';
-import { Public } from '../auth/public.decorator'; // Kendi Public etiketimiz
+import { Public } from '../auth/public.decorator';
 
 @Controller('company')
 export class CompanyController {
@@ -28,15 +28,15 @@ export class CompanyController {
   }
 
   @Public()
-  @Get(':id')
-  findOneById(@Param('id', ParseIntPipe) id: number) {
-    return this.companyService.findOneById(id);
-  }
-
-  @Public()
   @Get('name/:name')
   findOneByName(@Param('name') name: string) {
     return this.companyService.findOneByName(name);
+  }
+
+  @Public()
+  @Get(':id')
+  findOneById(@Param('id', ParseIntPipe) id: number) {
+    return this.companyService.findOneById(id);
   }
 
   @Patch(':id')

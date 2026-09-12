@@ -21,6 +21,8 @@ model Company {
   id           Int           @id @default(autoincrement())
   name         String        @unique
   website      String?
+  aiOpinion          String?   @db.Text
+  aiOpinionUpdatedAt DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   applications Application[]

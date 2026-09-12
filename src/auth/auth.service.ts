@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SignInDto, SignUpDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
@@ -41,7 +41,7 @@ export class AuthService {
     });
 
     if (!existingUser) {
-      throw new ConflictException('Kullanıcı mevcut değil');
+      throw new UnauthorizedException('E-posta veya şifre hatalı');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -50,7 +50,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new ConflictException('Şifre yanlış');
+      throw new UnauthorizedException('E-posta veya şifre hatalı');
     }
     const payload = {
       sub: existingUser.id,

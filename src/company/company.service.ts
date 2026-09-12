@@ -24,21 +24,81 @@ export class CompanyService {
     });
   }
 
-  findAll() {
-    return this.prisma.company.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll() {
+    const [companies, scoreGroups] = await Promise.all([
+      this.prisma.company.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.application.groupBy({
+        by: ['companyId'],
+        where: { aiScore: { not: null } },
+        _avg: { aiScore: true },
+        _count: { aiScore: true },
+      }),
+    ]);
+
+    const statsMap = new Map(
+      scoreGroups.map((group) => [
+        group.companyId,
+        {
+          averageScore: group._avg.aiScore ?? 0,
+          totalScoredApplications: group._count.aiScore,
+        },
+      ]),
+    );
+
+    return companies.map((company) => ({
+      ...company,
+      ...(statsMap.get(company.id) ?? {
+        averageScore: 0,
+        totalScoredApplications: 0,
+      }),
+    }));
   }
-  findOneByName(name: string) {
-    return this.prisma.company.findUniqueOrThrow({
+  async findOneByName(name: string) {
+    const company = await this.prisma.company.findUniqueOrThrow({
       where: { name },
     });
+    const stats = await this.prisma.application.aggregate({
+      where: {
+        companyId: company.id,
+        aiScore: { not: null },
+      },
+      _avg: {
+        aiScore: true,
+      },
+      _count: {
+        aiScore: true,
+      },
+    });
+    return {
+      ...company,
+      averageScore: stats._avg.aiScore || 0,
+      totalScoredApplications: stats._count.aiScore,
+    };
   }
 
-  findOneById(id: number) {
-    return this.prisma.company.findUniqueOrThrow({
+  async findOneById(id: number) {
+    const company = await this.prisma.company.findUniqueOrThrow({
       where: { id },
     });
+    const stats = await this.prisma.application.aggregate({
+      where: {
+        companyId: company.id,
+        aiScore: { not: null },
+      },
+      _avg: {
+        aiScore: true,
+      },
+      _count: {
+        aiScore: true,
+      },
+    });
+    return {
+      ...company,
+      averageScore: stats._avg.aiScore || 0,
+      totalScoredApplications: stats._count.aiScore,
+    };
   }
 
   update(id: number, CompanyDto: CompanyDto) {
