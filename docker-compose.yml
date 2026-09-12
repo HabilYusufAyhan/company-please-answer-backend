@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: company_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-company_db}
+      MYSQL_USER: ${DB_USER:-nest_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nest_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: company_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Prisma mysql string format
+      - DATABASE_URL=mysql://${DB_USER:-nest_user}:${DB_PASSWORD:-nest_password}@db:3306/${DB_NAME:-company_db}?schema=public
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:

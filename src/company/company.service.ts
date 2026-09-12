@@ -178,25 +178,11 @@ export class CompanyService {
     return this.prisma.company.update({ where: { id }, data: dto });
   }
 
-  async remove(requestUserId: number, requestUserRole: string, id: number) {
-    if (requestUserRole !== 'ADMIN') {
-      throw new ForbiddenException('Sadece admin şirket silebilir.');
-    }
-
+  async remove(id: number) {
     return this.prisma.company.delete({ where: { id } });
   }
 
-  async claimCompany(
-    companyId: number,
-    targetUserId: number,
-    requestUserRole: string,
-  ) {
-    if (requestUserRole !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Sadece adminler şirket sahipliği atayabilir.',
-      );
-    }
-
+  async claimCompany(companyId: number, targetUserId: number) {
     const company = await this.prisma.company.findUniqueOrThrow({
       where: { id: companyId },
     });
@@ -214,13 +200,7 @@ export class CompanyService {
     });
   }
 
-  async unclaimCompany(companyId: number, requestUserRole: string) {
-    if (requestUserRole !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Sadece adminler şirket sahipliğini kaldırabilir.',
-      );
-    }
-
+  async unclaimCompany(companyId: number) {
     return this.prisma.company.update({
       where: { id: companyId },
       data: { ownerId: null },

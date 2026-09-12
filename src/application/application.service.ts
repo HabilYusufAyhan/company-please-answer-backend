@@ -77,43 +77,80 @@ export class ApplicationService {
     });
 
     if (calculatedAiScore && calculatedAiScore > 0) {
-      const allEvaluations = await this.prisma.application.findMany({
-        where: {
-          companyId: application.companyId,
-          aiScore: { not: null },
-          responseMessage: { not: null },
-          responseReceivedAt: { not: null },
-        },
-        orderBy: { responseReceivedAt: 'desc' },
-        take: 50,
-        select: {
-          aiScore: true,
-          responseMessage: true,
-          responseReceivedAt: true,
-        },
-      });
-
-      allEvaluations.reverse();
-
-      const evaluations = allEvaluations.map((e) => ({
-        date: e.responseReceivedAt!.toISOString().split('T')[0],
-        score: e.aiScore!,
-        message: e.responseMessage!,
-      }));
-
-      const opinion = await this.aiService.generateCompanyOpinion(evaluations);
-
-      if (opinion) {
-        await this.prisma.company.update({
-          where: { id: application.companyId },
-          data: {
-            aiOpinion: opinion,
-            aiOpinionUpdatedAt: new Date(),
-          },
-        });
-      }
+      await this._recalculateCompanyOpinion(application.companyId);
     }
 
     return updatedApplication;
+  }
+
+  async remove(userId: number, id: number) {
+    const application = await this.prisma.application.findUniqueOrThrow({
+      where: { id },
+    });
+
+    if (application.userId !== userId) {
+      throw new ForbiddenException(
+        'Size ait olmayan bir başvuruyu silemezsiniz!',
+      );
+    }
+
+    const deletedApplication = await this.prisma.application.delete({
+      where: { id },
+    });
+
+    if (deletedApplication.aiScore !== null) {
+      await this._recalculateCompanyOpinion(deletedApplication.companyId);
+    }
+
+    return deletedApplication;
+  }
+
+  private async _recalculateCompanyOpinion(companyId: number) {
+    const allEvaluations = await this.prisma.application.findMany({
+      where: {
+        companyId: companyId,
+        aiScore: { not: null },
+        responseMessage: { not: null },
+        responseReceivedAt: { not: null },
+      },
+      orderBy: { responseReceivedAt: 'desc' },
+      take: 50,
+      select: {
+        aiScore: true,
+        responseMessage: true,
+        responseReceivedAt: true,
+      },
+    });
+
+    if (allEvaluations.length === 0) {
+      await this.prisma.company.update({
+        where: { id: companyId },
+        data: {
+          aiOpinion: null,
+          aiOpinionUpdatedAt: null,
+        },
+      });
+      return;
+    }
+
+    allEvaluations.reverse();
+
+    const evaluations = allEvaluations.map((e) => ({
+      date: e.responseReceivedAt!.toISOString().split('T')[0],
+      score: e.aiScore!,
+      message: e.responseMessage!,
+    }));
+
+    const opinion = await this.aiService.generateCompanyOpinion(evaluations);
+
+    if (opinion) {
+      await this.prisma.company.update({
+        where: { id: companyId },
+        data: {
+          aiOpinion: opinion,
+          aiOpinionUpdatedAt: new Date(),
+        },
+      });
+    }
   }
 }
